@@ -36,25 +36,25 @@ company = {
 
 
 """
-Вариант 1. n*len(...) + n^2*logn
+Вариант 1.n^2
 Очень медленный по скорости выполнения вариант.
 Сужу по графику из материалов к уроку.
 """
-company_items = list(company.items())  # O(1) * O(len(...)) * O(n) = n*len(...)
-company_items.sort(key=lambda i: i[1], reverse=True)  # O(n*logn) * O(n) = n^2*logn
+company_items = list(company.items())  # O(1) * O(len(...)) * O(n) = O(n)
+company_items.sort(key=lambda i: i[1], reverse=True)  # O(n*logn) * O(n) = O(n^2)
 print("Топ 3 компаний с самой большой прибылью:")
 [print(f"{comp[0]}: {comp[1]}") for comp in company_items[:3]]
 
 """
-Вариант 2. n^3*logn + 2 + n^5
+Вариант 2.n^5
 Ужасно медленный вариант, гораздо хуже первого.
 """
-sorted_values = sorted(company.values(), reverse=True)[:3]  # O(1) * O(n*logn) * O(n) * O(n) = n^3*logn
+sorted_values = sorted(company.values(), reverse=True)[:3]  # O(1) * O(n*logn) * O(n) * O(n) = O(n^3)
 sorted_dict = {}  # O(1)
 for i in sorted_values:  # 0(n)
     for k in company:  # O(n)
-        if company[k] == i:  # O(n) * O(1) = n
-            sorted_dict[k] = company[k]  # O(n) * O(1) * O(n) = n^2
+        if company[k] == i:  # O(n) * O(1) = O(n)
+            sorted_dict[k] = company[k]  # O(n) * O(1) * O(n) = O(n^2)
             break  # O(1)
 print("Топ 3 компаний с самой большой прибылью:")
 print(sorted_dict)

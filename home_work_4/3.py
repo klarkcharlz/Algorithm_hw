@@ -1,37 +1,64 @@
 """
 Задание 3.
-Определить количество различных (уникальных) подстрок с использованием хеш-функции.
-Дана строка S длиной N, состоящая только из строчных латинских букв.
-Подсказка: примените вычисление хешей для подстрок с помощью хеш-функций и множества
-Пример:
-рара - 6 уникальных подстрок
-рар
-ра
-ар
-ара
-р
-а
+Приведен код, формирующий из введенного числа
+обратное по порядку входящих в него
+цифр и вывести на экран.
+Сделайте профилировку каждого алгоритма через cProfile и через timeit
+Сделайте вывод, какая из трех реализаций эффективнее и почему!!!
+И можете предложить еще свой вариант решения!
+Без аналитики задание считается не принятым
+"""
+from timeit import Timer
+from random import randint
+from cProfile import run
+
+
+nums = randint(100_000, 1_000_000)
+
+
+def revers_1(enter_num, revers_num=0):
+    if enter_num == 0:
+        return revers_num
+    else:
+        num = enter_num % 10
+        revers_num = (revers_num + num / 10) * 10
+        enter_num //= 10
+        return revers_1(enter_num, revers_num)
+
+
+def revers_2(enter_num, revers_num=0):
+    while enter_num != 0:
+        num = enter_num % 10
+        revers_num = (revers_num + num / 10) * 10
+        enter_num //= 10
+    return revers_num
+
+
+def revers_3(enter_num):
+    enter_num = str(enter_num)
+    revers_num = enter_num[::-1]
+    return revers_num
+
+
+t1 = Timer("revers_1(nums)", globals=globals())
+print("Version 1 ", t1.timeit(number=10_000_000), "seconds.", f"Result: {revers_1(nums)}.")
+t2 = Timer("revers_2(nums)", globals=globals())
+print("Version 2 ", t2.timeit(number=10_000_000), "seconds", f"Result: {revers_2(nums)}.")
+t3 = Timer("revers_3(nums)", globals=globals())
+print("Version 3 ", t3.timeit(number=10_000_000), "seconds", f"Result: {revers_3(nums)}.")
+
+"""
+1 вараинт самый медленнный. Так как это рекурсия, она образует стек.
+3 вариант самый быстрый. Пользуемся встроенными инструментами Python заточенными на скорость уже до нас.
 """
 
-
-def unique(s):
-    unique_list = []
-    unique_set = set()
-    k = 0
-    for i in range(0, len(s)):
-        for j in range(1 + k, len(s) + 1):
-            if s[i:j] == s:
-                continue
-            hashing = hash(s[i:j])
-            if hashing not in unique_list:
-                unique_list.append(hashing)
-            unique_set.add(s[i:j])
-        k += 1
-    return unique_list, unique_set
+# Анализ через cProfile
 
 
-l, s = unique('papa')
-print(len(l))  # -> 6
-print(len(s))  # -> 6
+def main():
+    revers_1(nums)
+    revers_2(nums)
+    revers_3(nums)
 
 
+run('main()')

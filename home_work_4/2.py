@@ -1,82 +1,88 @@
 """
 Задание 2.
-Ваша программа должна запрашивать пароль
-Для этого пароля вам нужно получить хеш, используя функцию sha256
-Для генерации хеша обязательно нужно использовать криптографическую соль
-Обязательно выведите созданный хеш
-Далее программа должна запросить пароль повторно
-Вам нужно проверить, совпадает ли пароль с исходным
-Для проверки необходимо сравнить хеши паролей
-ПРИМЕР:
-Введите пароль: 123
-В базе данных хранится строка: 555a3581d37993843efd4eba1921f1dcaeeafeb855965535d77c55782349444b
-Введите пароль еще раз для проверки: 123
-Вы ввели правильный пароль
-Допускаются любые усложения задания - валидация, подключение к БД, передача данных в файл
+Приведен код, который формирует из введенного числа
+обратное по порядку входящих в него цифр.
+Задача решена через рекурсию
+Выполнена попытка оптимизировать решение через мемоизацию.
+Сделаны замеры обеих реализаций.
+Сделайте аналитику, нужна ли здесь мемоизация или нет и почему?!!!
+Если у вас есть идеи, предложите вариант оптимизации, если мемоизация не имеет смысла.
+Без аналитики задание считается не принятым
 """
-from hashlib import sha256
-from uuid import uuid4
-import sqlite3
+
+from timeit import timeit
+from random import randint
 
 
-# создаем БД, подключаемся к ней и создаем таблицу
-conn = sqlite3.connect("users.db")
-c = conn.cursor()
-c.execute("CREATE TABLE IF NOT EXISTS users("
-          "name TEXT,"
-          "salt TEXT,"
-          "password TEXT);")
-conn.commit()
+def recursive_reverse(number):
+    if number == 0:
+        return str(number % 10)
+    return f'{str(number % 10)}{recursive_reverse(number // 10)}'
 
 
-def registration():
-    """Регистрация новых пользователей."""
-    print("Регистрация!")
-    name = input("Пожалуйста введите Ваше имя:\n")
-    # проверяем что такого пользователя еще нету в БД
-    sel = c.execute("SELECT * FROM users WHERE name = ?;", (name,)).fetchall()
-    if sel:
-        print("Вы уже есть в базе. Регистрация не требуется")
-        return
-    password = input("Пожалуйста введите ваш пароль:\n")
-    salt = uuid4().hex.encode('utf-8')  # создаем уникальную соль во время регистрации пользователя
-    hash_password = sha256(salt + password.encode('utf-8')).hexdigest()
-    passwd = input("Пожалуйста введите ваш пароль повторно:\n")
-    hash_passwd = sha256(salt + passwd.encode('utf-8')).hexdigest()
-    if hash_passwd == hash_password:
-        print("Регистрация выполнена!")
-        # сохраняем данные о пользователе
-        insert_code = "INSERT INTO users VALUES (?, ?, ?);"
-        c.execute(insert_code, (name, salt, hash_password))
-        conn.commit()
-        return
-    else:
-        print("Регистрация не выполнена!")  # в случае ошибочного повторно ввода пароля
-        return
+num_100 = randint(10000, 1000000)
+num_1000 = randint(1000000, 10000000)
+num_10000 = randint(100000000, 10000000000000)
+
+print('Не оптимизированная функция recursive_reverse')
+print(
+    timeit(
+        "recursive_reverse(num_100)",
+        setup='from __main__ import recursive_reverse, num_100',
+        number=10000))
+print(
+    timeit(
+        "recursive_reverse(num_1000)",
+        setup='from __main__ import recursive_reverse, num_1000',
+        number=10000))
+print(
+    timeit(
+        "recursive_reverse(num_10000)",
+        setup='from __main__ import recursive_reverse, num_10000',
+        number=10000))
 
 
-def autorization():
-    """Авторизация зарегестрированных пользователей"""
-    print("Авторизация!")
-    name = input("Пожалуйста введите Ваше имя:\n")
-    # ищем пользователя в БД
-    sel = c.execute("SELECT name, salt, password FROM users WHERE name = ?;", (name,)).fetchall()
-    if sel:
-        salt = sel[0][1]
-        hash_passwd = sel[0][2]
-    else:
-        print("Вас нету в базе данных, вам необходимо выполнить регистрацию!")
-        return
-    password = input("Пожалуйста введите ваш пароль:\n")
-    if sha256(salt + password.encode('utf-8')).hexdigest() == hash_passwd:
-        print("Доступ разрешен!")
-        return
-    else:
-        print("доступ запрещен!")
-        return
+def memoize(f):
+    cache = {}
+
+    def decorate(*args):
+
+        if args in cache:
+            return cache[args]
+        else:
+            cache[args] = f(*args)
+            return cache[args]
+    return decorate
 
 
-registration()
-autorization()
+@memoize
+def recursive_reverse_mem(number):
+    if number == 0:
+        return ''
+    return f'{str(number % 10)}{recursive_reverse_mem(number // 10)}'
 
-conn.close()
+
+print('Оптимизированная функция recursive_reverse_mem')
+print(
+    timeit(
+        'recursive_reverse_mem(num_100)',
+        setup='from __main__ import recursive_reverse_mem, num_100',
+        number=10000))
+print(
+    timeit(
+        'recursive_reverse_mem(num_1000)',
+        setup='from __main__ import recursive_reverse_mem, num_1000',
+        number=10000))
+print(
+    timeit(
+        'recursive_reverse_mem(num_10000)',
+        setup='from __main__ import recursive_reverse_mem, num_10000',
+        number=10000))
+
+
+"""
+Мемоизация необходима, такой вывод можно сделать как минимум по результатам замеров.
+Версия с Мемоизация выполняется в десятки раз быстрее.
+Так как переодически функция рекурсивно вызывается с теми же аргументами, с которыми вызывалась ранее,
+и результаты этого выполнения захешированы.
+"""
